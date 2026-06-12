@@ -1,0 +1,6 @@
+{
+  "name": "Tiramisu PTSP",
+  "description": "Tanda Terima Surat Terintegrasi PTSP - Portal Serah Terima Dokumen Pemerintah",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "Settings": {
+      "title": "Settings",
+      "description": "Configuration settings for the PTSP government agency",
+      "type": "object",
+      "properties": {
+        "namaInstansi": { "type": "string", "description": "Full name of the agency" },
+        "singkatanInstansi": { "type": "string", "description": "Abbreviation of the agency" },
+        "logoInstansi": { "type": "string", "description": "Base64 encoded or URL path of the logo" },
+        "alamat": { "type": "string", "description": "Office physical address" },
+        "telepon": { "type": "string", "description": "Office phone number" },
+        "email": { "type": "string", "description": "Office email address" },
+        "website": { "type": "string", "description": "Office website URL" },
+        "namaPtsp": { "type": "string", "description": "PTSP Service Area Name" },
+        "namaPetugasDefault": { "type": "string", "description": "Default receiving officer name" },
+        "jabatanPetugas": { "type": "string", "description": "Official title of the officer" },
+        "nipPetugas": { "type": "string", "description": "Official government employee number (NIP)" },
+        "kopSuratPdf": { "type": "string", "description": "Styling or content of the default PDF Kop Header" }
+      },
+      "required": ["namaInstansi", "singkatanInstansi", "alamat", "telepon", "email", "website", "namaPtsp"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile details completed by the citizen or officers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique Firebase Auth identifier" },
+        "namaLengkap": { "type": "string", "description": "Full legal name" },
+        "instansi": { "type": "string", "description": "Organization, company, or individual name matching their occupation" },
+        "nomorHp": { "type": "string", "description": "Mobile contact number" },
+        "email": { "type": "string", "description": "Email address" },
+        "role": { "type": "string", "enum": ["admin", "petugas", "user"], "description": "Role access type" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" }
+      },
+      "required": ["uid", "namaLengkap", "instansi", "nomorHp", "email", "role"]
+    },
+    "Receipt": {
+      "title": "Receipt",
+      "description": "Tanda Terima Dokumen containing multiple letters",
+      "type": "object",
+      "properties": {
+        "nomorTandaTerima": { "type": "string", "description": "Generated receipt barcode id e.g. TMS-2026-0001" },
+        "tanggalTerima": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "pengirimUid": { "type": "string", "description": "User profile ID" },
+        "pengirimNama": { "type": "string", "description": "Cloned name of sender" },
+        "pengirimInstansi": { "type": "string", "description": "Cloned company/institution" },
+        "pengirimNomorHp": { "type": "string", "description": "Cloned mobile phone" },
+        "pengirimEmail": { "type": "string", "description": "Cloned sender email" },
+        "suratList": {
+          "type": "array",
+          "description": "Accumulation of letters in this specific transaction",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nomorSurat": { "type": "string" },
+              "tanggalSurat": { "type": "string" },
+              "perihalSurat": { "type": "string" }
+            },
+            "required": ["nomorSurat", "tanggalSurat", "perihalSurat"]
+          }
+        },
+        "petugasUid": { "type": "string", "description": "ID of officer handling the receipt" },
+        "petugasNama": { "type": "string", "description": "Name of the receptionist" },
+        "petugasNip": { "type": "string", "description": "NIP of the receptionist if available" }
+      },
+      "required": [
+        "nomorTandaTerima",
+        "tanggalTerima",
+        "pengirimUid",
+        "pengirimNama",
+        "pengirimInstansi",
+        "pengirimNomorHp",
+        "pengirimEmail",
+        "suratList",
+        "petugasUid",
+        "petugasNama"
+      ]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Administrative action logs tracking system edits",
+      "type": "object",
+      "properties": {
+        "logId": { "type": "string" },
+        "petugasUid": { "type": "string" },
+        "petugasNama": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["logId", "petugasUid", "petugasNama", "action", "details", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingsId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Stores configuration values of the PTSP office"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles for both public senders and governmental officers"
+    },
+    "/receipts/{receiptId}": {
+      "schema": { "$ref": "#/entities/Receipt" },
+      "description": "Individual multi-document receipts processed by PTSP"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Log actions performed by administrators or receptionists"
+    }
+  }
+}
