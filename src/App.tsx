@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import firebaseConfig from '../firebase-applet-config.json';
 import { 
   auth, 
   db, 
@@ -59,7 +60,8 @@ import {
   Plus,
   Trash2,
   UserCheck,
-  UserX
+  UserX,
+  ExternalLink
 } from 'lucide-react';
 
 // Default Settings
@@ -82,6 +84,7 @@ const DEFAULT_SETTINGS: Settings = {
 export default function App() {
   // Auth state
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [showProfileCompleteModal, setShowProfileCompleteModal] = useState(false);
@@ -155,7 +158,7 @@ export default function App() {
         setDoc(doc(db, 'settings', 'instansi'), DEFAULT_SETTINGS).catch(err => console.error("Bootstrap settings failed: ", err));
       }
     }, (err) => {
-      console.error("Failed to load settings from Firestore: ", err);
+      handleFirestoreError(err, OperationType.GET, 'settings/instansi');
     });
 
     // Observe user sign in
@@ -372,11 +375,17 @@ export default function App() {
   };
 
   const handleGoogleLogin = async () => {
+    setAuthError(null);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      if (err?.code === 'auth/unauthorized-domain' || (err?.message && err.message.toLowerCase().includes('unauthorized-domain'))) {
+        setAuthError(`auth/unauthorized-domain: Domain "${window.location.hostname}" belum diizinkan di Firebase Console -> Authentication -> Settings -> Authorized domains.`);
+      } else {
+        setAuthError(err?.message || String(err));
+      }
     }
   };
 
@@ -1102,7 +1111,54 @@ export default function App() {
                     <LogIn className="w-4 h-4" />
                     Registrasi via Google Login
                   </button>
+                  <a
+                    href={window.location.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:w-auto px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2 duration-200"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Buka di Tab Baru (Disarankan)
+                  </a>
                 </div>
+
+                <div className="w-full max-w-xl p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left text-xs text-amber-200 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-400">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Tips Login Google</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-gray-300">
+                    Jika proses login tidak memunculkan popup atau kembali ke halaman utama, ini dikarenakan kebijakan keamanan browser memblokir cookies pihak ketiga di dalam iframe pratinjau editor. 
+                    Silakan klik <strong className="text-amber-400 font-black">"Buka di Tab Baru"</strong> di atas atau tombol pratinjau di sudut kanan atas untuk login dengan lancar.
+                  </p>
+                </div>
+
+                {authError && (
+                  <div className="w-full mt-4 p-4 bg-red-950/90 border border-red-500/30 rounded-2xl text-left text-xs text-red-200 space-y-2.5 animate-fadeIn max-w-xl">
+                    <div className="flex items-center gap-2 font-bold text-red-400">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                      <span>Masalah Autentikasi / Domain Belum Diizinkan</span>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="leading-relaxed">
+                        Jika Anda baru saja menambahkan domain <span className="font-mono bg-red-900/50 px-1 py-0.5 rounded text-white font-bold select-all">{window.location.hostname}</span> di Firebase Console, harap tunggu sekitar <strong className="text-red-300">2 sampai 5 menit</strong> karena proses sinkronisasi domain baru di server Google memiliki jeda perambatan (propagation time).
+                      </p>
+                      <div className="p-3 bg-black/40 border border-red-500/10 rounded-xl space-y-1.5 text-gray-300">
+                        <p className="font-bold text-gray-200">Langkah Verifikasi Mandiri:</p>
+                        <ol className="list-decimal list-inside space-y-1 text-xs">
+                          <li>Buka <a href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`} target="_blank" rel="noreferrer" className="underline text-brand-primary font-bold hover:text-amber-400">Konsol Firebase ({firebaseConfig.projectId})</a>.</li>
+                          <li>Pilih tab <strong>Settings</strong> di menu navigasi halaman Authentication.</li>
+                          <li>Klik menu <strong>Authorized domains</strong> di sebelah kiri.</li>
+                          <li>Pastikan domain berikut sudah ada di daftar: <span className="font-mono font-bold bg-white/10 px-1 rounded select-all text-white font-black">{window.location.hostname}</span></li>
+                          <li>Buka aplikasi di halaman tab browser terpisah dengan mengklik <a href={window.location.href} target="_blank" rel="noreferrer" className="underline text-brand-primary font-bold">tautan ini</a> untuk menghindari blokade cookie iframe.</li>
+                        </ol>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono">
+                        {authError}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Graphical QR Illustration box */}
